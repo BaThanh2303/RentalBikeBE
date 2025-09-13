@@ -30,15 +30,16 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/stations/**").permitAll()
-                        .requestMatchers("/api/vehicles/station/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()  // ✅ Cho phép login/register
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/technician/**").hasRole("TECHNICIAN")
-                        .requestMatchers("/api/**").hasAnyRole("USER","ADMIN","TECHNICIAN")
-                        .anyRequest().authenticated()
-                )
+//                .authorizeHttpRequests(auth -> auth
+//                        .requestMatchers("/api/auth/**").permitAll()  // ✅ Cho phép login/register
+//                        .requestMatchers("/api/stations/**").permitAll()
+//                        .requestMatchers("/api/vehicles/**").permitAll()
+//                        .requestMatchers("/api/rentals/**").permitAll()  // ✅ Cho phép tất cả rental endpoints
+//                        .requestMatchers("/api/users/**").permitAll()   // ✅ Cho phép user endpoints
+//                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+//                        .requestMatchers("/api/technician/**").hasRole("TECHNICIAN")
+//                        .anyRequest().authenticated()
+//                )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

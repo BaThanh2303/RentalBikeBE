@@ -37,6 +37,6 @@ public class Rental {
     private Status status = Status.ACTIVE;
 
     public enum Status {
-        ACTIVE, COMPLETED, CANCELED
+        PENDING, ACTIVE, COMPLETED, CANCELED
     }
 }

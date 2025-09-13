@@ -60,6 +60,7 @@ public class AuthController {
         String token = jwtUtil.generateToken(new CustomUserDetails(user));
 
         Map<String, String> response = new HashMap<>();
+        response.put("userId", user.getUserId().toString());
         response.put("token", token);
         response.put("role", String.valueOf(user.getRole()));   // ✅ thêm role
         response.put("name", user.getName());   // có thể thêm name để FE hiển thị
