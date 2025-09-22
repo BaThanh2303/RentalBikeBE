@@ -43,5 +43,18 @@ public class UserService {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
+
+    /**
+     * Update user's CCCD image URL
+     * @param userId The user ID
+     * @param cccdImageUrl The CCCD image URL to set
+     * @return Updated user
+     */
+    public User updateUserCccdImageUrl(Long userId, String cccdImageUrl) {
+        return userRepository.findById(userId).map(user -> {
+            user.setCccdImageUrl(cccdImageUrl);
+            return userRepository.save(user);
+        }).orElseThrow(() -> new RuntimeException("User not found"));
+    }
 }
 

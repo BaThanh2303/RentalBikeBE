@@ -29,6 +29,9 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role = Role.USER;
 
+    @Column(name = "cccd_image_url", length = 255)
+    private String cccdImageUrl;
+
     public enum Role {
         USER, ADMIN, TECHNICIAN
     }

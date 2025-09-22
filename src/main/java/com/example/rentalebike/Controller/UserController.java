@@ -3,9 +3,17 @@ package com.example.rentalebike.Controller;
 
 import com.example.rentalebike.Models.User;
 import com.example.rentalebike.Service.UserService;
+import com.example.rentalebike.Services.StorageService;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -13,9 +21,11 @@ import java.util.Map;
 @RequestMapping("/api/users")
 public class UserController {
     private final UserService userService;
+    private final StorageService storageService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, StorageService storageService) {
         this.userService = userService;
+        this.storageService = storageService;
     }
 
     @GetMapping
@@ -65,6 +75,95 @@ public class UserController {
                 "message", "Không tìm thấy thông tin người dùng"
             );
             return ResponseEntity.status(404).body(errorResponse);
+        }
+    }
+
+    /**
+     * Upload CCCD image for a user
+     * POST /api/users/{id}/cccd
+     * Security: Only logged-in user can upload their own CCCD
+     */
+    @PostMapping("/{id}/cccd")
+    public ResponseEntity<Map<String, Object>> uploadCccd(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            // TODO: Add authentication check - only user can upload their own CCCD
+            // For now, we'll proceed without authentication
+
+            // Validate user exists
+            User user = userService.getUserById(id)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Store the file
+            String cccdImageUrl = storageService.storeCccdFile(file, id);
+
+            // Update user's CCCD image URL
+            userService.updateUserCccdImageUrl(id, cccdImageUrl);
+
+            response.put("message", "CCCD uploaded successfully");
+            response.put("cccdImageUrl", cccdImageUrl);
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (IOException e) {
+            response.put("error", "Failed to store file: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        } catch (RuntimeException e) {
+            response.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+    }
+
+    /**
+     * Get CCCD image for a user
+     * GET /api/users/{id}/cccd
+     * Security: Only admin can view CCCD of any user
+     */
+    @GetMapping("/{id}/cccd")
+    public ResponseEntity<Resource> getCccd(@PathVariable Long id) {
+        try {
+            // TODO: Add authentication check - only admin can view CCCD of any user
+            // For now, we'll proceed without authentication
+
+            // Get user and their CCCD image URL
+            User user = userService.getUserById(id)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            String cccdImageUrl = user.getCccdImageUrl();
+            if (cccdImageUrl == null || cccdImageUrl.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Extract filename from URL path
+            String filename = cccdImageUrl.substring(cccdImageUrl.lastIndexOf('/') + 1);
+
+            // Load file as Resource
+            Resource file = storageService.loadCccdFile(filename);
+
+            // Determine content type
+            String contentType = "application/octet-stream";
+            if (filename.toLowerCase().endsWith(".jpg") || filename.toLowerCase().endsWith(".jpeg")) {
+                contentType = "image/jpeg";
+            } else if (filename.toLowerCase().endsWith(".png")) {
+                contentType = "image/png";
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
+                    .body(file);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }
