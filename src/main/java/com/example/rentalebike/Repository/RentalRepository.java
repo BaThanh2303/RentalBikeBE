@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface RentalRepository extends JpaRepository<Rental, Long> {
     List<Rental> findByUserUserId(Long userId);
+    List<Rental> findByStatus(Rental.Status status);
 }

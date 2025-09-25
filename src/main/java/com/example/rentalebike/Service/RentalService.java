@@ -44,6 +44,19 @@ public class RentalService {
         return rentalRepository.findByUserUserId(userId);
     }
 
+    public List<Rental> findByStatus(Rental.Status status) {
+        return rentalRepository.findByStatus(status);
+    }
+
+    public Rental findById(Long rentalId) {
+        return rentalRepository.findById(rentalId)
+                .orElseThrow(() -> new RuntimeException("Rental not found"));
+    }
+
+    public Rental save(Rental rental) {
+        return rentalRepository.save(rental);
+    }
+
     public Rental createRental(Long userId, Long vehicleId, Long packageId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));

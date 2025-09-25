@@ -62,4 +62,8 @@ public class VehicleService {
     public void deleteVehicle(Long id) {
         vehicleRepository.deleteById(id);
     }
+
+    public Vehicle save(Vehicle vehicle) {
+        return vehicleRepository.save(vehicle);
+    }
 }

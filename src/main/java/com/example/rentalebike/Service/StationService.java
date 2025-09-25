@@ -29,6 +29,11 @@ public class StationService {
         return stationRepository.findById(id);
     }
 
+    public Station findById(Long id) {
+        return stationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Station not found"));
+    }
+
     public Station createStation(Station station) {
         return stationRepository.save(station);
     }

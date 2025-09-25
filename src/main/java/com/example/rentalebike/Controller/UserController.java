@@ -4,6 +4,7 @@ package com.example.rentalebike.Controller;
 import com.example.rentalebike.Models.User;
 import com.example.rentalebike.Service.UserService;
 import com.example.rentalebike.Services.StorageService;
+import com.example.rentalebike.dto.UserGmailCccdResponse;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/users")
@@ -31,6 +34,51 @@ public class UserController {
     @GetMapping
     public List<User> getAllUsers() {
         return userService.getAllUsers();
+    }
+
+    /**
+     * Get all users with Gmail and CCCD image data
+     * GET /api/users/gmail-cccd
+     * Returns: List of users with userId, name, email (Gmail), and cccdImageUrl
+     */
+    @GetMapping("/gmail-cccd")
+    public ResponseEntity<Map<String, Object>> getAllUsersGmailCccd(HttpServletRequest request) {
+        try {
+            List<User> users = userService.getAllUsers();
+
+            // Get base URL for constructing full image URLs
+            String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+
+            List<UserGmailCccdResponse> userResponses = users.stream()
+                    .map(user -> {
+                        String fullImageUrl = null;
+                        if (user.getCccdImageUrl() != null && !user.getCccdImageUrl().isEmpty()) {
+                            // Convert relative path to full URL
+                            fullImageUrl = baseUrl + "/uploads" + user.getCccdImageUrl();
+                        }
+
+                        return UserGmailCccdResponse.builder()
+                                .userId(user.getUserId())
+                                .name(user.getName())
+                                .email(user.getEmail()) // Gmail address
+                                .cccdImageUrl(fullImageUrl) // Full CCCD image URL
+                                .build();
+                    })
+                    .collect(Collectors.toList());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Lấy danh sách người dùng thành công");
+            response.put("totalUsers", userResponses.size());
+            response.put("users", userResponses);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Lỗi khi lấy danh sách người dùng: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
     }
 
     @GetMapping("/{id}")
