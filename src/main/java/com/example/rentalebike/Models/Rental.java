@@ -28,6 +28,10 @@ public class Rental {
     @JoinColumn(name = "package_id", nullable = false)
     private RentalPackage rentalPackage;
 
+    @OneToOne
+    @JoinColumn(name = "payment_id")
+    private Payment payment;
+
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 

@@ -178,4 +178,27 @@ public class RentalService {
 
         return rentalRepository.save(rental);
     }
+
+    // Payment integration methods
+    public Rental updateRentalStatus(Long rentalId, Rental.Status status) {
+        Rental rental = rentalRepository.findById(rentalId)
+                .orElseThrow(() -> new RuntimeException("Rental not found"));
+        rental.setStatus(status);
+        return rentalRepository.save(rental);
+    }
+
+    public Rental confirmRentalPayment(Long rentalId) {
+        Rental rental = rentalRepository.findById(rentalId)
+                .orElseThrow(() -> new RuntimeException("Rental not found"));
+
+        // Update rental status to PAID
+        rental.setStatus(Rental.Status.PAID);
+        rental.setStartTime(null); // Don't set start time until pickup
+        rental.setEndTime(null);   // Don't set end time until pickup
+
+        // Update vehicle status if needed (keep as AVAILABLE until pickup)
+        // Vehicle will be updated to RENTED when customer scans QR for pickup
+
+        return rentalRepository.save(rental);
+    }
 }

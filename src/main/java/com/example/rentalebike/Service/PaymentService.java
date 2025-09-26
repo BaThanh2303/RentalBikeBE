@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PaymentService {
@@ -36,25 +37,63 @@ public class PaymentService {
                 .rental(rental)
                 .user(user)
                 .amount(amount)
+                .currency("VND")
+                .paymentMethod("vnpay")
                 .status(Payment.Status.PENDING)
-                .paymentTime(LocalDateTime.now())
+                .callbackProcessed(false)
                 .build();
 
         return paymentRepository.save(payment);
     }
 
-
     public List<Payment> getPaymentsByUser(Long userId) {
         return paymentRepository.findByUser_UserId(userId);
     }
 
-    public Payment updateStatus(Long paymentId, Payment.Status status, String transactionId) {
-        Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new RuntimeException("Payment not found"));
-        payment.setStatus(status);
-        if (transactionId != null) {
-            payment.setTransactionId(transactionId);
-        }
+    // VNPay-specific methods
+    public Payment save(Payment payment) {
         return paymentRepository.save(payment);
+    }
+
+    public Optional<Payment> findByVnpayTxnRef(String vnpayTxnRef) {
+        return paymentRepository.findByVnpayTxnRef(vnpayTxnRef);
+    }
+
+    public Optional<Payment> findByRentalId(Long rentalId) {
+        return paymentRepository.findFirstByRental_RentalId(rentalId);
+    }
+
+    public Payment updateStatus(Long paymentId, Payment.Status status) {
+        return paymentRepository.findById(paymentId).map(payment -> {
+            payment.setStatus(status);
+            return paymentRepository.save(payment);
+        }).orElseThrow(() -> new RuntimeException("Payment not found"));
+    }
+
+    public Payment updateVnpayInfo(Long paymentId, String vnpayTxnRef, String vnpayTransactionNo,
+                                   String vnpayResponseCode, String vnpayBankCode, String vnpayCardType) {
+        return paymentRepository.findById(paymentId).map(payment -> {
+            payment.setVnpayTxnRef(vnpayTxnRef);
+            payment.setVnpayTransactionNo(vnpayTransactionNo);
+            payment.setVnpayResponseCode(vnpayResponseCode);
+            payment.setVnpayBankCode(vnpayBankCode);
+            payment.setVnpayCardType(vnpayCardType);
+            return paymentRepository.save(payment);
+        }).orElseThrow(() -> new RuntimeException("Payment not found"));
+    }
+
+    public Payment markCallbackProcessed(Long paymentId) {
+        return paymentRepository.findById(paymentId).map(payment -> {
+            payment.setCallbackProcessed(true);
+            return paymentRepository.save(payment);
+        }).orElseThrow(() -> new RuntimeException("Payment not found"));
+    }
+
+    public Optional<Payment> getPaymentById(Long id) {
+        return paymentRepository.findById(id);
+    }
+
+    public List<Payment> getPaymentsByRental(Long rentalId) {
+        return paymentRepository.findByRental_RentalId(rentalId);
     }
 }
